@@ -41,6 +41,51 @@ commonAnnotations: {}
 ##
 commonLabels: {}
 
+multi-region:
+  ## @param multi-region.enabled Enable multi-region settings
+  ## PVC for keeping state files for updates
+  ## Init with multiple pbf files
+  ##
+  enabled: false
+  ## @param multi-region.baseUrl Base URL for the replication server url
+  ##
+  baseUrl: https://download.geofabrik.de
+  ## @param multi-region.fileSuffix Suffix for the PBF file url
+  ##
+  fileSuffix: -latest.osm.pbf
+  ## @param multi-region.updateSuffix Suffix for the PBF update directory url
+  ##
+  updateSuffix: -updates
+  ## @param multi-region.regions List of regions to download
+  ##
+  regions:
+    - europe/germany/sachsen
+    - europe/monaco
+  ## @param multi-region.threads Number of threads to use for indexing after an update
+  ##
+  updateThreads: 16
+  pvc:
+    ## @param multi-reginon.pvc.storageClass Persistent Volume storage class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
+    ##
+    storageClass:
+    ## @param multi-region.pvc.accessModes [array] Persistent Volume access modes
+    ##
+    accessModes:
+      - ReadWriteOnce
+    ## @param multi-region.pvc.size Persistent Volume size
+    ##
+    size: 1Gi
+    ## @param multi-region.pvc.existingClaim The name of an existing PVC to use for persistence
+    ##
+    existingClaim:
+  ## @param multi-region.updateSchedule Cron schedule of how often upstream publishes diffs
+  ## For example, geofabrik publishes diffs every day around 21:00 CET so the schedule should be set to ~"15 21 */1 * *"
+  ##
+  updateSchedule: "30 21 */1 * *"
+
 nominatimInitialize:
   enabled: false
   pbfUrl: https://download.geofabrik.de/europe/germany/sachsen-latest.osm.pbf
@@ -79,7 +124,8 @@ podAnnotations: {}
 podSecurityContext:
   fsGroup: 101
 
-securityContext: {}
+securityContext:
+  {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -105,9 +151,10 @@ service:
   ## e.g:
   ## clusterIP: None
   ##
-  clusterIP: ""
+  clusterIP:
+    ""
 
-   ## @param service.loadBalancerIP Nominatim loadBalancerIP if service type is `LoadBalancer`
+    ## @param service.loadBalancerIP Nominatim loadBalancerIP if service type is `LoadBalancer`
   ## Set the LoadBalancer service type to internal only
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
   ##
@@ -182,9 +229,10 @@ ingress:
   ##       ...
   ##       -----END CERTIFICATE-----
   ##
-  secrets: [ ]
+  secrets: []
 
-resources: {}
+resources:
+  {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -241,16 +289,15 @@ postgresql:
       size: 500Gi
 
     extendedConfiguration: |
-        shared_buffers = 2GB
-        maintenance_work_mem = 10GB
-        autovacuum_work_mem = 2GB
-        work_mem = 50MB
-        effective_cache_size = 24GB
-        synchronous_commit = off
-        max_wal_size = 1GB
-        checkpoint_timeout = 10min
-        checkpoint_completion_target = 0.9
-
+      shared_buffers = 2GB
+      maintenance_work_mem = 10GB
+      autovacuum_work_mem = 2GB
+      work_mem = 50MB
+      effective_cache_size = 24GB
+      synchronous_commit = off
+      max_wal_size = 1GB
+      checkpoint_timeout = 10min
+      checkpoint_completion_target = 0.9
 
 externalDatabase:
   ## @param externalDatabase.host External Database server host

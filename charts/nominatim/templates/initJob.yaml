@@ -74,6 +74,23 @@ spec:
             - us_postcodes.csv.gz
 {{- end }}
 
+{{- if .Values.multi-region.enabled }}
+{{- range $index, $region := .Values.multi-region.regions }}
+        - name: download-pbf-{{ $region }}
+          image: curlimages/curl
+          workingDir: /nominatim
+          volumeMounts:
+            - mountPath: /nominatim
+              name: data
+          command:
+            - curl
+            - -L
+            - {{ printf "%s/%s%s" .Values.multi-region.baseUrl $region .Values.multi-region.fileSuffix }}
+            - --create-dirs
+            - -o
+            - {{ $region }}.osm.pbf
+{{- end }}
+{{- else }}
         - name: download-pbf
           image: curlimages/curl
           workingDir: /nominatim
@@ -87,8 +104,29 @@ spec:
             - --create-dirs
             - -o
             - data.osm.pbf
+{{- end }}
 
       containers:
+      {{- if and .Values.multi-region.enabled .Values.nominatimReplications.enabled }}
+        - name: setup-updates
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          workingDir: /nominatim
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: REGIONS
+              value: {{ join " " .Values.multi-region.regions }}
+          command: |
+            for REGION in $REGIONS;
+            do
+              mkdir -p "updates/$REGION" && touch "updates/$REGION/sequence.state"
+              pyosmium-get-changes -v -O "$REGION.osm.pbf" -f updates/$REGION/sequence.state
+            done
+          volumeMounts:
+            - mountPath: /nominatim
+              name: data
+            - mountPath: /nominatim/updates
+              name: updates
+      {{- end}}
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           workingDir: /nominatim
@@ -113,11 +151,19 @@ spec:
               value: {{ .Values.nominatimInitialize.threads | quote }}
             - name: NOMINATIM_DATABASE_WEBUSER
               value: {{ include "nominatim.databaseUser" . }}
+{{- $osm_files := "" }}
+{{- if .Values.nominatimInitialize.multi-region.enabled }}
+{{- range $index, $region := .Values.multi-region.regions }}
+{{- $osm_files = printf "%s --osm-file %s.osm.pbf" $osm_files $region }}
+{{- end }}
+{{- else }}
+{{- $osm_files = "--osm-file data.osm.pbf" }}
+{{- end }}
           command:
             - /bin/bash
             - -ec
             - |
-              nominatim import --osm-file data.osm.pbf --threads $THREADS
+              nominatim import {{ $osm_files }} --threads $THREADS
               nominatim index --threads $THREADS
               nominatim admin --check-database
 
@@ -149,6 +195,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
+        {{- if .Values.multi-region.enabled }}
+        - name: updates
+          persistentVolumeClaim:
+            claimName: {{ .Values.multi-region.pvc.existingClaim | default (include "nominatim.updatePvcName" .) }}
+        {{- end }}
         {{- if  .Values.flatnode.enabled }}
         - name: flatnode
           persistentVolumeClaim:
