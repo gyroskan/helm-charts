@@ -62,6 +62,13 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Name of the pvc used for multi-region updates
+*/}}
+{{- define "nominatim.updatePvcName" -}}
+{{- printf "%s-update" (include "nominatim.fullname" .) -}}
+{{- end }}
+
+{{/*
 Create a default fully qualified postgresql name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}

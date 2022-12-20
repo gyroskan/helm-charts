@@ -1,4 +1,87 @@
 {{- if and .Values.nominatimReplications.enabled (not .Values.nominatimInitialize.enabled) }}
+{{- if .Values.multi-region.enabled }}
+apiVersion: v1
+kind: CronJob
+metadata:
+  name: {{ include "nominatim.fullname" . }}-updates
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.multi-region.updateSchedule }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "nominatim.name" . }}-updates
+        spec:
+          containers:
+            - name: {{ include "nominatim.fullname" . }}-updates
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              workingDir: /nominatim
+              env:
+                - name: REGIONS
+                  value: {{ join " " .Values.multi-region.regions }}
+                - name: BASE_URL
+                  value: {{ .Values.multi-region.baseUrl }}
+                - name: SUFFIX
+                  value: {{ .Values.multi-region.updateSuffix }}
+                - name: NOMINATIM_DATABASE_DSN
+                  value: {{ include "nominatim.databaseUrl" . }}
+                - name: NOMINATIM_IMPORT_STYLE
+                  value: {{ .Values.nominatimInitialize.importStyle }}
+                - name: THREADS
+                  value: {{ .Values.multi-region.updateThreads }}
+                {{- if .Values.flatnode.enabled }}
+                - name: NOMINATIM_FLATNODE_FILE
+                  value: /nominatim/flatnode/flatnode.file
+                {{- end }}
+                {{- if .Values.nominatimReplications.extraEnv }}
+                {{- include "common.tplvalues.render" (dict "value" .Values.nominatim.extraEnv "context" $) | nindent 12 }}
+              {{- end }}
+              command: |
+                for REGION in $REGIONS;
+                do
+                  echo "Updating $REGION"
+                  echo "Getting changes"
+                  pyosmiuim-get-changes -v -o "$REGION.osc.gz" -f "updates/$REGION/sequence.state" --server "$BASE_URL/$REGION$SUFFIX"
+                  echo "Importing changes"
+                  nominatim add-data --diff "$REGION.osc.gz"
+                  echo "Removing changes file"
+                  rm "$REGION.osc.gz"
+                done
+
+                echo "Updating search index"
+                nominatim index -j $THREADS
+              
+              volumeMounts:
+                - mountPath: /nominatim/updates
+                  name: updates
+                - mountPath: /nominatim
+                  name: data
+                - mountPath: /dev/shm
+                  name: dshm
+                {{- if .Values.flatnode.enabled }}
+                - mountPath: /nominatim/flatnode
+                  name: flatnode
+                {{- end }}
+          restartPolicy: Never
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+          volumes:
+            - name: updates
+              persistentVolumeClaim:
+                claimName: {{ .Values.multi-region.pvc.existingClaim | default (include "nominatim.updatePvcName" .) }}
+            - name: data
+              emptyDir: {}
+            - name: dshm
+              emptyDir:
+                medium: Memory
+{{- else }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -58,4 +141,5 @@ spec:
       - name: dshm
         emptyDir:
           medium: Memory
+{{- end }}
 {{- end }}
