@@ -76,7 +76,8 @@ spec:
 
 {{- if .Values.multiRegion.enabled }}
 {{- range $index, $region := .Values.multiRegion.regions }}
-        - name: download-pbf-{{ $region }}
+{{ $name := splitList "/" $region | last }}
+        - name: download-pbf-{{ $name }}
           image: curlimages/curl
           workingDir: /nominatim
           volumeMounts:
