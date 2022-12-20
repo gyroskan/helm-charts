@@ -62,7 +62,7 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Name of the pvc used for multi-region updates
+Name of the pvc used for multiRegion updates
 */}}
 {{- define "nominatim.updatePvcName" -}}
 {{- printf "%s-update" (include "nominatim.fullname" .) -}}

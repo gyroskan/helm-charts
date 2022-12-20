@@ -41,27 +41,27 @@ commonAnnotations: {}
 ##
 commonLabels: {}
 
-multi-region:
-  ## @param multi-region.enabled Enable multi-region settings
+multiRegion:
+  ## @param multiRegion.enabled Enable multiRegion settings
   ## PVC for keeping state files for updates
   ## Init with multiple pbf files
   ##
   enabled: false
-  ## @param multi-region.baseUrl Base URL for the replication server url
+  ## @param multiRegion.baseUrl Base URL for the replication server url
   ##
   baseUrl: https://download.geofabrik.de
-  ## @param multi-region.fileSuffix Suffix for the PBF file url
+  ## @param multiRegion.fileSuffix Suffix for the PBF file url
   ##
   fileSuffix: -latest.osm.pbf
-  ## @param multi-region.updateSuffix Suffix for the PBF update directory url
+  ## @param multiRegion.updateSuffix Suffix for the PBF update directory url
   ##
   updateSuffix: -updates
-  ## @param multi-region.regions List of regions to download
+  ## @param multiRegion.regions List of regions to download
   ##
   regions:
     - europe/germany/sachsen
     - europe/monaco
-  ## @param multi-region.threads Number of threads to use for indexing after an update
+  ## @param multiRegion.threads Number of threads to use for indexing after an update
   ##
   updateThreads: 16
   pvc:
@@ -71,17 +71,17 @@ multi-region:
     ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner
     ##
     storageClass:
-    ## @param multi-region.pvc.accessModes [array] Persistent Volume access modes
+    ## @param multiRegion.pvc.accessModes [array] Persistent Volume access modes
     ##
     accessModes:
       - ReadWriteOnce
-    ## @param multi-region.pvc.size Persistent Volume size
+    ## @param multiRegion.pvc.size Persistent Volume size
     ##
     size: 1Gi
-    ## @param multi-region.pvc.existingClaim The name of an existing PVC to use for persistence
+    ## @param multiRegion.pvc.existingClaim The name of an existing PVC to use for persistence
     ##
     existingClaim:
-  ## @param multi-region.updateSchedule Cron schedule of how often upstream publishes diffs
+  ## @param multiRegion.updateSchedule Cron schedule of how often upstream publishes diffs
   ## For example, geofabrik publishes diffs every day around 21:00 CET so the schedule should be set to ~"15 21 */1 * *"
   ##
   updateSchedule: "30 21 */1 * *"

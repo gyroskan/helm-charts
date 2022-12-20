@@ -1,5 +1,5 @@
 {{- if and .Values.nominatimReplications.enabled (not .Values.nominatimInitialize.enabled) }}
-{{- if .Values.multi-region.enabled }}
+{{- if .Values.multiRegion.enabled }}
 apiVersion: v1
 kind: CronJob
 metadata:
@@ -7,7 +7,7 @@ metadata:
   namespace: {{ include "common.names.namespace" . | quote }}
   labels: {{- include "common.labels.standard" . | nindent 4 }}
 spec:
-  schedule: {{ .Values.multi-region.updateSchedule }}
+  schedule: {{ .Values.multiRegion.updateSchedule }}
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
@@ -23,17 +23,17 @@ spec:
               workingDir: /nominatim
               env:
                 - name: REGIONS
-                  value: {{ join " " .Values.multi-region.regions }}
+                  value: {{ join " " .Values.multiRegion.regions }}
                 - name: BASE_URL
-                  value: {{ .Values.multi-region.baseUrl }}
+                  value: {{ .Values.multiRegion.baseUrl }}
                 - name: SUFFIX
-                  value: {{ .Values.multi-region.updateSuffix }}
+                  value: {{ .Values.multiRegion.updateSuffix }}
                 - name: NOMINATIM_DATABASE_DSN
                   value: {{ include "nominatim.databaseUrl" . }}
                 - name: NOMINATIM_IMPORT_STYLE
                   value: {{ .Values.nominatimInitialize.importStyle }}
                 - name: THREADS
-                  value: {{ .Values.multi-region.updateThreads }}
+                  value: {{ .Values.multiRegion.updateThreads }}
                 {{- if .Values.flatnode.enabled }}
                 - name: NOMINATIM_FLATNODE_FILE
                   value: /nominatim/flatnode/flatnode.file
@@ -56,8 +56,8 @@ spec:
                     rm "$REGION.osc.gz"
                   done
 
-                echo "Updating search index"
-                nominatim index -j $THREADS
+                  echo "Updating search index"
+                  nominatim index -j $THREADS
               
               volumeMounts:
                 - mountPath: /nominatim/updates
@@ -78,7 +78,7 @@ spec:
           volumes:
             - name: updates
               persistentVolumeClaim:
-                claimName: {{ .Values.multi-region.pvc.existingClaim | default (include "nominatim.updatePvcName" .) }}
+                claimName: {{ .Values.multiRegion.pvc.existingClaim | default (include "nominatim.updatePvcName" .) }}
             - name: data
               emptyDir: {}
             - name: dshm

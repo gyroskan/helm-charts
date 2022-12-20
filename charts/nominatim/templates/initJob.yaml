@@ -74,8 +74,8 @@ spec:
             - us_postcodes.csv.gz
 {{- end }}
 
-{{- if .Values.multi-region.enabled }}
-{{- range $index, $region := .Values.multi-region.regions }}
+{{- if .Values.multiRegion.enabled }}
+{{- range $index, $region := .Values.multiRegion.regions }}
         - name: download-pbf-{{ $region }}
           image: curlimages/curl
           workingDir: /nominatim
@@ -85,7 +85,7 @@ spec:
           command:
             - curl
             - -L
-            - {{ printf "%s/%s%s" .Values.multi-region.baseUrl $region .Values.multi-region.fileSuffix }}
+            - {{ printf "%s/%s%s" $.Values.multiRegion.baseUrl $region $.Values.multiRegion.fileSuffix }}
             - --create-dirs
             - -o
             - {{ $region }}.osm.pbf
@@ -107,7 +107,7 @@ spec:
 {{- end }}
 
       containers:
-      {{- if and .Values.multi-region.enabled .Values.nominatimReplications.enabled }}
+      {{- if and .Values.multiRegion.enabled .Values.nominatimReplications.enabled }}
         - name: setup-updates
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           workingDir: /nominatim
@@ -155,8 +155,8 @@ spec:
             - name: NOMINATIM_DATABASE_WEBUSER
               value: {{ include "nominatim.databaseUser" . }}
 {{- $osm_files := "" }}
-{{- if .Values.nominatimInitialize.multi-region.enabled }}
-{{- range $index, $region := .Values.multi-region.regions }}
+{{- if .Values.multiRegion.enabled }}
+{{- range $index, $region := .Values.multiRegion.regions }}
 {{- $osm_files = printf "%s --osm-file %s.osm.pbf" $osm_files $region }}
 {{- end }}
 {{- else }}
@@ -198,10 +198,10 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-        {{- if .Values.multi-region.enabled }}
+        {{- if .Values.multiRegion.enabled }}
         - name: updates
           persistentVolumeClaim:
-            claimName: {{ .Values.multi-region.pvc.existingClaim | default (include "nominatim.updatePvcName" .) }}
+            claimName: {{ .Values.multiRegion.pvc.existingClaim | default (include "nominatim.updatePvcName" .) }}
         {{- end }}
         {{- if  .Values.flatnode.enabled }}
         - name: flatnode

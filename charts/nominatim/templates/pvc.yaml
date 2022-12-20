@@ -17,7 +17,7 @@ spec:
   {{- include "common.storage.class" (dict "persistence" .Values.flatnode "global" .Values.global) | nindent 2 }}
 ...
 {{- end}}
-{{- if and .Values.nominatimReplications.enabled (and .Values.multi-region.enabled (not .Values.multi-region.existingClaim)) }}
+{{- if and .Values.nominatimReplications.enabled (and .Values.multiRegion.enabled (not .Values.multiRegion.existingClaim)) }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -32,7 +32,7 @@ spec:
       {{- end }}
   resources:
     requests:
-      storage: {{ .Values.multi-region.pvc.size | quote }}
-  {{- include "common.storage.class" (dict "persistence" .Values.multi-region.pvc "global" .Values.global) | nindent 2 }}
+      storage: {{ .Values.multiRegion.pvc.size | quote }}
+  {{- include "common.storage.class" (dict "persistence" .Values.multiRegion.pvc "global" .Values.global) | nindent 2 }}
 ...
 {{- end}}
