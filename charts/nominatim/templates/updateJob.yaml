@@ -41,17 +41,20 @@ spec:
                 {{- if .Values.nominatimReplications.extraEnv }}
                 {{- include "common.tplvalues.render" (dict "value" .Values.nominatim.extraEnv "context" $) | nindent 12 }}
               {{- end }}
-              command: |
-                for REGION in $REGIONS;
-                do
-                  echo "Updating $REGION"
-                  echo "Getting changes"
-                  pyosmiuim-get-changes -v -o "$REGION.osc.gz" -f "updates/$REGION/sequence.state" --server "$BASE_URL/$REGION$SUFFIX"
-                  echo "Importing changes"
-                  nominatim add-data --diff "$REGION.osc.gz"
-                  echo "Removing changes file"
-                  rm "$REGION.osc.gz"
-                done
+              command:
+                - /bin/bash
+                - -ec
+                - |
+                  for REGION in $REGIONS;
+                  do
+                    echo "Updating $REGION"
+                    echo "Getting changes"
+                    pyosmiuim-get-changes -v -o "$REGION.osc.gz" -f "updates/$REGION/sequence.state" --server "$BASE_URL/$REGION$SUFFIX"
+                    echo "Importing changes"
+                    nominatim add-data --diff "$REGION.osc.gz"
+                    echo "Removing changes file"
+                    rm "$REGION.osc.gz"
+                  done
 
                 echo "Updating search index"
                 nominatim index -j $THREADS

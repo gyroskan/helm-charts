@@ -114,13 +114,16 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: REGIONS
-              value: {{ join " " .Values.multi-region.regions }}
-          command: |
-            for REGION in $REGIONS;
-            do
-              mkdir -p "updates/$REGION" && touch "updates/$REGION/sequence.state"
-              pyosmium-get-changes -v -O "$REGION.osm.pbf" -f updates/$REGION/sequence.state
-            done
+              value: {{ join " " .Values.multiRegion.regions }}
+          command: 
+            - /bin/bash
+            - -ec
+            - |
+              for REGION in $REGIONS;
+              do
+                mkdir -p "updates/$REGION" && touch "updates/$REGION/sequence.state"
+                pyosmium-get-changes -v -O "$REGION.osm.pbf" -f updates/$REGION/sequence.state
+              done
           volumeMounts:
             - mountPath: /nominatim
               name: data
