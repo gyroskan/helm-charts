@@ -23,7 +23,7 @@ spec:
               workingDir: /nominatim
               env:
                 - name: REGIONS
-                  value: {{ join " " .Values.multiRegion.regions }}
+                  value: {{ join " " .Values.multiRegion.regions | quote }}
                 - name: BASE_URL
                   value: {{ .Values.multiRegion.baseUrl }}
                 - name: SUFFIX
@@ -33,7 +33,7 @@ spec:
                 - name: NOMINATIM_IMPORT_STYLE
                   value: {{ .Values.nominatimInitialize.importStyle }}
                 - name: THREADS
-                  value: {{ .Values.multiRegion.updateThreads }}
+                  value: {{ .Values.multiRegion.updateThreads | quote }}
                 {{- if .Values.flatnode.enabled }}
                 - name: NOMINATIM_FLATNODE_FILE
                   value: /nominatim/flatnode/flatnode.file
