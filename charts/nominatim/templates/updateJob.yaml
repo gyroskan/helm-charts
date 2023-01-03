@@ -30,7 +30,10 @@ spec:
                 - name: SUFFIX
                   value: {{ .Values.multiRegion.updateSuffix }}
                 - name: NOMINATIM_DATABASE_DSN
-                  value: {{ include "nominatim.databaseUrl" . }}
+                  valueFrom:
+                    secretKeyRef: 
+                      name: {{ include "nominatim.databaseSecret" . | quote }}
+                      key: databaseUrl
                 - name: NOMINATIM_IMPORT_STYLE
                   value: {{ .Values.nominatimInitialize.importStyle }}
                 - name: THREADS
@@ -110,7 +113,10 @@ spec:
           workingDir: /nominatim
           env:
             - name: NOMINATIM_DATABASE_DSN
-              value: {{ include "nominatim.databaseUrl" . }}
+              valueFrom:
+                secretKeyRef: 
+                  name: {{ include "nominatim.databaseSecret" . | quote }}
+                  key: databaseUrl
             - name: NOMINATIM_REPLICATION_URL
               value: {{ .Values.nominatimReplications.replicationUrl }}
             - name: NOMINATIM_IMPORT_STYLE

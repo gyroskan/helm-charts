@@ -144,7 +144,10 @@ spec:
               value: {{ .Values.nominatimInitialize.importStyle }}
             {{- end }}
             - name: NOMINATIM_DATABASE_DSN
-              value: {{ include "nominatim.databaseUrl" . }}
+              valueFrom:
+                secretKeyRef: 
+                  name: {{ include "nominatim.databaseSecret" . | quote }}
+                  key: databaseUrl
             {{- if .Values.flatnode.enabled }}
             - name: NOMINATIM_FLATNODE_FILE
               value: /nominatim/flatnode/flatnode.file

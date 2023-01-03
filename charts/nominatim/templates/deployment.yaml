@@ -47,7 +47,10 @@ spec:
             {{- include "common.tplvalues.render" (dict "value" .Values.nominatim.extraEnv "context" $) | nindent 12 }}
             {{- end }}
             - name: NOMINATIM_DATABASE_DSN
-              value: {{ include "nominatim.databaseUrl" . }}
+              valueFrom:
+                secretKeyRef: 
+                  name: {{ include "nominatim.databaseSecret" . | quote }}
+                  key: databaseUrl
             - name: NOMINATIM_REPLICATION_URL
               value: {{ .Values.nominatimReplications.replicationUrl }}
           command:

@@ -128,6 +128,10 @@ Create the database URL.
 pgsql:host={{ include "nominatim.databaseHost" . }};port={{ include "nominatim.databasePort" . }};user={{ include "nominatim.databaseUser" . }};password={{ include "nominatim.databasePassword" . }};dbname={{ include "nominatim.databaseName" . }}
 {{- end }}
 
+{{- define "nominatim.databaseSecret" -}}
+{{- printf "%s-%s" (include "nominatim.fullname" .) "postgresql" }}
+{{- end }}
+
 {{- define "nominatim.containerPort" -}}
 {{- ternary 80 8080 .Values.nominatimUi.enabled -}}
 {{- end }}
