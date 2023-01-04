@@ -38,6 +38,8 @@ spec:
               name: data
           command:
             - curl
+            - -A
+            - {{ .Values.nominatimInitialize.userAgent }}
             - https://nominatim.org/data/wikimedia-importance.sql.gz
             - -L
             - -o
@@ -53,6 +55,8 @@ spec:
               name: data
           command:
             - curl
+            - -A
+            - {{ .Values.nominatimInitialize.userAgent }}
             - https://www.nominatim.org/data/gb_postcodes.csv.gz
             - -L
             - -o
@@ -68,6 +72,8 @@ spec:
               name: data
           command:
             - curl
+            - -A
+            - {{ .Values.nominatimInitialize.userAgent }}
             - https://www.nominatim.org/data/us_postcodes.csv.gz
             - -L
             - -o
