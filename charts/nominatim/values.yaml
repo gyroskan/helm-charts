@@ -304,6 +304,12 @@ externalDatabase:
   ## @param externalDatabase.host External Database server host
   ##
   host: localhost
+  ## @param externalDatabase.readerHost External Database read only endpoint
+  ##
+  readerHost: ""
+  ## @param externalDatabase.readerPort External Database read only server port
+  ##
+  # readerPort: 5432
   ## @param externalDatabase.port External Database server port
   ##
   port: 5432

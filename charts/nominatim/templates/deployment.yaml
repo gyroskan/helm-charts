@@ -50,7 +50,7 @@ spec:
               valueFrom:
                 secretKeyRef: 
                   name: {{ include "nominatim.databaseSecret" . | quote }}
-                  key: databaseUrl
+                  key: databaseReaderUrl
             - name: NOMINATIM_REPLICATION_URL
               value: {{ .Values.nominatimReplications.replicationUrl }}
           command:
