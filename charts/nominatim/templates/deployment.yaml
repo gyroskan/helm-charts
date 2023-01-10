@@ -57,6 +57,9 @@ spec:
             - /bin/bash
             - -ec
             - |
+                echo "replacing UPDATE statements with SET statements"
+                curl 'https://raw.githubusercontent.com/osm-search/Nominatim/e9e14834bc3ae398e1ac161281591bd99c9b458f/lib-php/DB.php' -o /usr/local/lib/nominatim/lib-php/DB.php
+                echo "replaced UPDATE statements with SET statements"
                 nominatim refresh --website
                 a2enmod rewrite
                 /usr/sbin/apache2ctl -D FOREGROUND
