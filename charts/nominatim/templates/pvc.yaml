@@ -1,4 +1,5 @@
 {{- if and .Values.flatnode.enabled (not .Values.flatnode.existingClaim) }}
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -14,4 +15,24 @@ spec:
     requests:
       storage: {{ .Values.flatnode.size | quote }}
   {{- include "common.storage.class" (dict "persistence" .Values.flatnode "global" .Values.global) | nindent 2 }}
+...
+{{- end}}
+{{- if and .Values.nominatimReplications.enabled (and .Values.multiRegion.enabled (not .Values.multiRegion.existingClaim)) }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "nominatim.updatePvcName" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- range .Values.multiRegion.pvc.accessModes }}
+    - {{ . | quote }}
+      {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.multiRegion.pvc.size | quote }}
+  {{- include "common.storage.class" (dict "persistence" .Values.multiRegion.pvc "global" .Values.global) | nindent 2 }}
+...
 {{- end}}

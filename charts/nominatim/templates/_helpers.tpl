@@ -62,6 +62,13 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Name of the pvc used for multiRegion updates
+*/}}
+{{- define "nominatim.updatePvcName" -}}
+{{- printf "%s-update" (include "nominatim.fullname" .) -}}
+{{- end }}
+
+{{/*
 Create a default fully qualified postgresql name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
@@ -85,6 +92,22 @@ Add environment variables to configure database values
 {{- end -}}
 {{- end -}}
 
+{{/*
+DB Host used for read only connections
+*/}}
+{{- define "nominatim.databaseReaderHost" -}}
+{{- if .Values.postgresql.enabled }}
+    {{- printf "%s" (include "nominatim.postgresql.fullname" .) -}}
+{{- else -}}
+    {{- if .Values.externalDatabase.readerHost -}}
+        {{- printf "%s" .Values.externalDatabase.readerHost -}}
+    {{- else -}}
+        {{- printf "%s" .Values.externalDatabase.host -}}
+    {{- end -}}
+{{- end -}}
+{{- end -}}
+
+
 {{- define "nominatim.databasePort" -}}
 {{- if .Values.postgresql.enabled }}
     {{- printf "%d" (.Values.postgresql.primary.service.ports.postgresql | int ) -}}
@@ -93,6 +116,17 @@ Add environment variables to configure database values
 {{- end -}}
 {{- end -}}
 
+{{- define "nominatim.databaseReaderPort" -}}
+{{- if .Values.postgresql.enabled }}
+    {{- printf "%d" (.Values.postgresql.primary.service.ports.postgresql | int ) -}}
+{{- else -}}
+    {{- if .Values.externalDatabase.readerPort -}}
+        {{- printf "%d" (.Values.externalDatabase.readerPort | int ) -}}
+    {{- else -}}
+        {{- printf "%d" (.Values.externalDatabase.port | int ) -}}
+    {{- end -}}
+{{- end -}}
+{{- end -}}
 
 {{- define "nominatim.databaseName" -}}
 {{- "nominatim" -}}
@@ -119,6 +153,17 @@ Create the database URL.
 */}}
 {{- define "nominatim.databaseUrl" -}}
 pgsql:host={{ include "nominatim.databaseHost" . }};port={{ include "nominatim.databasePort" . }};user={{ include "nominatim.databaseUser" . }};password={{ include "nominatim.databasePassword" . }};dbname={{ include "nominatim.databaseName" . }}
+{{- end }}
+
+{{/*
+Create the database readonly URL.
+*/}}
+{{- define "nominatim.databaseReaderUrl" -}}
+pgsql:host={{ include "nominatim.databaseReaderHost" . }};port={{ include "nominatim.databaseReaderPort" . }};user={{ include "nominatim.databaseUser" . }};password={{ include "nominatim.databasePassword" . }};dbname={{ include "nominatim.databaseName" . }}
+{{- end }}
+
+{{- define "nominatim.databaseSecret" -}}
+{{- printf "%s-%s" (include "nominatim.fullname" .) "postgresql" }}
 {{- end }}
 
 {{- define "nominatim.containerPort" -}}

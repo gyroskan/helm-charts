@@ -1,4 +1,96 @@
 {{- if and .Values.nominatimReplications.enabled (not .Values.nominatimInitialize.enabled) }}
+{{- if .Values.multiRegion.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "nominatim.fullname" . }}-updates
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.multiRegion.updateSchedule }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "nominatim.name" . }}-updates
+        spec:
+          containers:
+            - name: {{ include "nominatim.fullname" . }}-updates
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              workingDir: /nominatim
+              env:
+                - name: REGIONS
+                  value: {{ join " " .Values.multiRegion.regions | quote }}
+                - name: BASE_URL
+                  value: {{ .Values.multiRegion.baseUrl }}
+                - name: SUFFIX
+                  value: {{ .Values.multiRegion.updateSuffix }}
+                - name: NOMINATIM_DATABASE_DSN
+                  valueFrom:
+                    secretKeyRef: 
+                      name: {{ include "nominatim.databaseSecret" . | quote }}
+                      key: databaseUrl
+                - name: NOMINATIM_IMPORT_STYLE
+                  value: {{ .Values.nominatimInitialize.importStyle }}
+                - name: THREADS
+                  value: {{ .Values.multiRegion.updateThreads | quote }}
+                {{- if .Values.flatnode.enabled }}
+                - name: NOMINATIM_FLATNODE_FILE
+                  value: /nominatim/flatnode/flatnode.file
+                {{- end }}
+                {{- if .Values.nominatimReplications.extraEnv }}
+                {{- include "common.tplvalues.render" (dict "value" .Values.nominatim.extraEnv "context" $) | nindent 12 }}
+              {{- end }}
+              command:
+                - /bin/bash
+                - -ec
+                - |
+                  for REGION in $REGIONS;
+                  do
+                    echo "Updating $REGION"
+                    mkdir -p "$REGION"
+                    echo "Getting changes"
+                    pyosmium-get-changes -v -o "$REGION.osc.gz" -f "updates/$REGION/sequence.state" --server "$BASE_URL/$REGION$SUFFIX"
+                    echo "Importing changes"
+                    nominatim add-data --diff "$REGION.osc.gz"
+                    echo "Removing changes file"
+                    rm "$REGION.osc.gz"
+                  done
+
+                  echo "Updating search index"
+                  nominatim index -j $THREADS
+
+              volumeMounts:
+                - mountPath: /nominatim/updates
+                  name: updates
+                - mountPath: /nominatim
+                  name: data
+                - mountPath: /dev/shm
+                  name: dshm
+                {{- if .Values.flatnode.enabled }}
+                - mountPath: /nominatim/flatnode
+                  name: flatnode
+                  subPath: flatnode
+                {{- end }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          restartPolicy: Never
+          volumes:
+            - name: updates
+              persistentVolumeClaim:
+                claimName: {{ .Values.multiRegion.pvc.existingClaim | default (include "nominatim.updatePvcName" .) }}
+            - name: data
+              emptyDir: {}
+            - name: dshm
+              emptyDir:
+                medium: Memory
+{{- else }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,7 +113,10 @@ spec:
           workingDir: /nominatim
           env:
             - name: NOMINATIM_DATABASE_DSN
-              value: {{ include "nominatim.databaseUrl" . }}
+              valueFrom:
+                secretKeyRef: 
+                  name: {{ include "nominatim.databaseSecret" . | quote }}
+                  key: databaseUrl
             - name: NOMINATIM_REPLICATION_URL
               value: {{ .Values.nominatimReplications.replicationUrl }}
             - name: NOMINATIM_IMPORT_STYLE
@@ -58,4 +153,5 @@ spec:
       - name: dshm
         emptyDir:
           medium: Memory
+{{- end }}
 {{- end }}
