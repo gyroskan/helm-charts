@@ -122,13 +122,30 @@ The command removes all the Kubernetes components associated with the chart and 
 | Name                                       | Description                                                   | Value                |
 | ------------------------------------------ | ------------------------------------------------------------- | -------------------- |
 | `nominatimInitialize.enabled`              | enable/disable init job                                       | `false `             |
-| `nominatimInitialize.pbfUrl`               | URL of the pbf file to import                                 | `https://download.geofabrik.de/europe/germany/sachsen-latest.osm.pbf` |
+| `nominatimInitialize.pbfUrl`               | URL of the pbf file to import (ignored if `multiRegion.enabled = true`) | `https://download.geofabrik.de/europe/germany/sachsen-latest.osm.pbf` |
 | `nominatimInitialize.importWikipedia`      | If additional Wikipedia/Wikidata rankings should be imported  | `false`               |
 | `nominatimInitialize.importGB_Postcode`    | If external GB postcodes should be imported                   | `false`               |
 | `nominatimInitialize.importUS_Postcode`    | If external US postcodes should be imported                   | `false`               |
 | `nominatimInitialize.importStyle`          | Nominatim import style                                        | `full`                |
 | `nominatimInitialize.customStyleUrl`       | Custom import style file URL                                  | `nil`                 |
 | `nominatimInitialize.threads`              | The number of thread used by the import                       | `16`                  |
+
+### Nominatim Multi Region Configuration parameters
+
+| Name                                       | Description                                                   | Value                |
+| ------------------------------------------ | ------------------------------------------------------------- | -------------------- |
+| `multiRegion.enabled`                      | enable/disable multi region (init with multiple pbf files)    | `false `             |
+| `multiRegion.baseUrl`                      | Base URL for the replication server url                       | `https://download.geofabrik.de` |
+| `multiRegion.fileSuffix`                   | Suffix for the PFB file url                                   | `-latest.osm.pbf`    |
+| `multiRegion.updateSuffix`                 | Suffix for the PBF update directory url                       | `-updates`           |
+| `multiRegion.updateSchedule`               | Cron schedule of how often the upstream publishes diffs       | `30 21 * * *`        |
+| `multiRegion.regions`                      | List of regions to import                                     | `[europe/germany/sachsen]` |
+| `multiRegion.updateThreads`                | The number of thread used for indexing after an update        | `16`                 |
+| `multiRegion.pvc`                          | PVC used to keep state files for updates (ignored if `nominatimReplications.enabled = false`) |  |
+| `multiRegion.pvc.storageClass`             | PVC storage class                                             | `nil`                |
+| `multiRegion.pvc.accessMode`               | PVC access mode                                               | `ReadWriteOnce`      |
+| `multiRegion.pvc.size`                     | PVC size                                                      | `1Gi`                |
+| `multiRegion.pvc.existingClaim`            | PVC existing claim                                            | `nil`                |
 
 ### Nominatim Replication Configuration parameters
 
@@ -183,10 +200,13 @@ The command removes all the Kubernetes components associated with the chart and 
 | `postgresql.primary.persistence.storageClass` | Persistent Volume storage class                                              | `nil`                         |
 | `postgresql.primary.persistence.accessModes`  | Persistent Volume access modes                                               | `[ReadWriteOnce]`             |
 | `postgresql.primary.persistence.size`         | Persistent Volume size                                                       | `500Gi`                       |
- | `externalDatase.host`                         | External PostgreSQL host (ignored if `postgresql.enabled = true`)            | localhost                     |
- | `externalDatase.port`                         | External PostgreSQL post (ignored if `postgresql.enabled = true`)            | 5432                          |
- | `externalDatase.user`                         | External PostgreSQL user (ignored if `postgresql.enabled = true`)            | nominatim                     |
- | `externalDatase.password`                     | External PostgreSQL password (ignored if `postgresql.enabled = true`)        | ""                            |
+| `externalDatabase.host`                       | External PostgreSQL host (ignored if `postgresql.enabled = true`)            | localhost                     |
+| `externalDatabase.port`                       | External PostgreSQL post (ignored if `postgresql.enabled = true`)            | 5432                          |
+| `externalDatabase.user`                       | External PostgreSQL user (ignored if `postgresql.enabled = true`)            | nominatim                     |
+| `externalDatabase.password`                   | External PostgreSQL password (ignored if `postgresql.enabled = true`)        | ""                            |
+| `externalDatabase.readerHost`                 | External PostgreSQL read only host (ignored if `postgresql.enabled = true`)  | ""                            |
+| `externalDatabase.readerPort`                 | External PostgreSQL read only port (ignored if `postgresql.enabled = true`)  | ""                            |
+
 ## Configuration and installation details
 
 ### Flatnode support
